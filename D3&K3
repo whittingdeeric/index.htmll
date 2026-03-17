@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>k3&D3 GOD MODE</title>
+<style>
+body{margin:0;font-family:-apple-system,Arial;background:#000;color:white}
+.page{display:none;height:100vh;overflow:auto}
+#home{display:flex;flex-direction:column;align-items:center;justify-content:center}
+#dock{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.1);padding:10px 20px;border-radius:30px;display:flex;gap:15px}
+.icon{font-size:24px;cursor:pointer}
+canvas{background:black;display:block;margin:20px auto}
+textarea{width:90%;height:60%}
+</style>
+</head>
+<body>
+
+<div id="home" class="page">
+<h1>k3&d3</h1>
+<input id="search" placeholder="Search...">
+<button onclick="alert(search.value)">Search</button>
+</div>
+
+<div id="games" class="page">
+<h2>Tetris</h2>
+<canvas id="tetris" width="200" height="400"></canvas>
+</div>
+
+<div id="files" class="page">
+<h2>File System</h2>
+<input type="file" onchange="upload(event)">
+<ul id="filesList"></ul>
+</div>
+
+<div id="dock">
+<div class="icon" onclick="show('home')">🏠</div>
+<div class="icon" onclick="show('games')">🎮</div>
+<div class="icon" onclick="show('files')">📁</div>
+</div>
+
+<script>
+function show(p){document.querySelectorAll('.page').forEach(x=>x.style.display='none');document.getElementById(p).style.display='block'}
+show('home');
+
+// ===== FULL TETRIS =====
+const canvas=document.getElementById('tetris');
+const ctx=canvas.getContext('2d');
+const ROWS=20,COLS=10,SIZE=20;
+let board=Array.from({length:ROWS},()=>Array(COLS).fill(0));
+
+const shapes=[
+[[1,1,1,1]],
+[[1,1],[1,1]],
+[[0,1,0],[1,1,1]],
+[[1,1,0],[0,1,1]],
+[[0,1,1],[1,1,0]]
+];
+
+let piece={x:3,y:0,shape:randomShape()};
+function randomShape(){return shapes[Math.random()*shapes.length|0]}
+
+function draw(){
+ctx.clearRect(0,0,200,400);
+board.forEach((r,y)=>r.forEach((v,x)=>{if(v)ctx.fillRect(x*SIZE,y*SIZE,18,18)}));
+piece.shape.forEach((r,y)=>r.forEach((v,x)=>{if(v)ctx.fillRect((piece.x+x)*SIZE,(piece.y+y)*SIZE,18,18)}));
+}
+
+function collide(){
+return piece.shape.some((r,y)=>r.some((v,x)=>{
+let nx=piece.x+x,ny=piece.y+y;
+return v&&(ny>=ROWS||nx<0||nx>=COLS||board[ny][nx]);
+}));
+}
+
+function merge(){
+piece.shape.forEach((r,y)=>r.forEach((v,x)=>{
+if(v)board[piece.y+y][piece.x+x]=1;
+}));
+}
+
+function clearLines(){
+board=board.filter(r=>r.some(v=>!v));
+while(board.length<ROWS)board.unshift(Array(COLS).fill(0));
+}
+
+function drop(){
+piece.y++;
+if(collide()){
+piece.y--;
+merge();
+clearLines();
+piece={x:3,y:0,shape:randomShape()};
+}
+}
+
+setInterval(()=>{drop();draw();},400);
+
+document.addEventListener('keydown',e=>{
+if(e.key==='ArrowLeft')piece.x--;
+if(e.key==='ArrowRight')piece.x++;
+if(e.key==='ArrowDown')drop();
+if(e.key==='ArrowUp'){
+piece.shape=piece.shape[0].map((_,i)=>piece.shape.map(r=>r[i]).reverse());
+}
+});
+
+// ===== FILE SYSTEM =====
+function upload(e){
+let file=e.target.files[0];
+let li=document.createElement('li');
+li.textContent=file.name;
+document.getElementById('filesList').appendChild(li);
+}
+
+// ===== MULTIPLAYER (REAL ONLINE requires server) =====
+// Example placeholder using WebSocket
+// let ws=new WebSocket('wss://your-server-url');
+
+</script>
+
+</body>
+</html>
